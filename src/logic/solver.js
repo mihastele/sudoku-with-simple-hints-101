@@ -138,15 +138,21 @@ export function getAnalysis(board, hint) {
     const steps = [];
 
     // Case 1: Naked Single (Cell has only 1 candidate)
-    // We want to show why all OTHER numbers are impossible.
     if (hint.type === 'NAKED_SINGLE') {
         const { row, col, value } = hint;
+
+        // Intro step
+        steps.push({
+            message: `Analyzing cell (${row + 1}, ${col + 1}). We need to prove that only ${value} can go here.`,
+            highlight: [{ row, col, type: 'target' }]
+        });
+
         for (let num = 1; num <= 9; num++) {
             if (num === value) continue;
 
             // Find why 'num' is invalid for (row, col)
-            // Check row
             let conflict = null;
+            // Check row
             for (let c = 0; c < 9; c++) {
                 if (board[row][c] === num) {
                     conflict = { type: 'row', r: row, c: c };
@@ -201,21 +207,20 @@ export function getAnalysis(board, hint) {
                 }
 
                 steps.push({
-                    message: `${num} is not possible because it's already in the ${conflict.type} at (${conflict.r + 1}, ${conflict.c + 1}).`,
+                    message: `Check ${num}: Impossible. There is already a ${num} in the ${conflict.type}.`,
                     highlight: highlights,
                     invalidNumber: num
                 });
             }
         }
         steps.push({
-            message: `Therefore, ${value} is the only possible value for this cell.`,
+            message: `Conclusion: Since all other numbers are blocked, this cell MUST be ${value}.`,
             highlight: [{ row, col, type: 'target' }],
             isConclusion: true
         });
     }
 
     // Case 2: Hidden Single (Number can only go in one spot in a unit)
-    // We want to show why the target number cannot go in ANY OTHER empty cell in that unit.
     else if (hint.type.startsWith('HIDDEN_SINGLE')) {
         const { row, col, value } = hint;
 
@@ -244,10 +249,11 @@ export function getAnalysis(board, hint) {
             return null;
         };
 
-        const addStep = (r, c, conflict) => {
-            const highlights = [];
-            // Target we are disproving
-            highlights.push({ row: r, col: c, type: 'target' });
+        const addStep = (r, c, conflict, contextHighlights) => {
+            const highlights = [...contextHighlights];
+
+            // The cell we are checking (that is NOT the target)
+            highlights.push({ row: r, col: c, type: 'check' });
 
             // Conflict Source
             highlights.push({ row: conflict.r, col: conflict.c, type: 'source' });
@@ -267,25 +273,54 @@ export function getAnalysis(board, hint) {
                 }
             }
 
+            // Re-add target to ensure it stays visible
+            highlights.push({ row, col, type: 'target' });
+
             steps.push({
-                message: `${value} cannot go in (${r + 1}, ${c + 1}) because of the ${value} at (${conflict.r + 1}, ${conflict.c + 1}).`,
+                message: `Check (${r + 1}, ${c + 1}): Cannot contain ${value} because of the ${value} in the ${conflict.type}.`,
                 highlight: highlights,
                 invalidNumber: value,
                 targetCell: { row: r, col: c }
             });
         };
 
+        let contextHighlights = [];
+        let contextName = "";
+
+        if (hint.type === 'HIDDEN_SINGLE_ROW') {
+            contextName = `Row ${row + 1}`;
+            for (let c = 0; c < 9; c++) contextHighlights.push({ row, col: c, type: 'context' });
+        } else if (hint.type === 'HIDDEN_SINGLE_COL') {
+            contextName = `Column ${col + 1}`;
+            for (let r = 0; r < 9; r++) contextHighlights.push({ row: r, col, type: 'context' });
+        } else if (hint.type === 'HIDDEN_SINGLE_BLOCK') {
+            contextName = "this 3x3 Block";
+            const sr = Math.floor(row / 3) * 3;
+            const sc = Math.floor(col / 3) * 3;
+            for (let i = 0; i < 3; i++) {
+                for (let j = 0; j < 3; j++) {
+                    contextHighlights.push({ row: sr + i, col: sc + j, type: 'context' });
+                }
+            }
+        }
+
+        // Intro Step
+        steps.push({
+            message: `Analyzing ${contextName}. We are looking for where ${value} can go.`,
+            highlight: [...contextHighlights, { row, col, type: 'target' }]
+        });
+
         if (hint.type === 'HIDDEN_SINGLE_ROW') {
             for (let c = 0; c < 9; c++) {
                 if (c === col || board[row][c] !== BLANK) continue;
                 const conflict = findConflict(row, c);
-                if (conflict) addStep(row, c, conflict);
+                if (conflict) addStep(row, c, conflict, contextHighlights);
             }
         } else if (hint.type === 'HIDDEN_SINGLE_COL') {
             for (let r = 0; r < 9; r++) {
                 if (r === row || board[r][col] !== BLANK) continue;
                 const conflict = findConflict(r, col);
-                if (conflict) addStep(r, col, conflict);
+                if (conflict) addStep(r, col, conflict, contextHighlights);
             }
         } else if (hint.type === 'HIDDEN_SINGLE_BLOCK') {
             const startRow = Math.floor(row / 3) * 3;
@@ -296,13 +331,13 @@ export function getAnalysis(board, hint) {
                     const c = startCol + j;
                     if ((r === row && c === col) || board[r][c] !== BLANK) continue;
                     const conflict = findConflict(r, c);
-                    if (conflict) addStep(r, c, conflict);
+                    if (conflict) addStep(r, c, conflict, contextHighlights);
                 }
             }
         }
 
         steps.push({
-            message: `Therefore, ${value} must go in (${row + 1}, ${col + 1}) as it's the only spot left in this unit.`,
+            message: `Conclusion: (${row + 1}, ${col + 1}) is the ONLY spot left in ${contextName} for ${value}.`,
             highlight: [{ row, col, type: 'target' }],
             isConclusion: true
         });
