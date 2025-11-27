@@ -2,8 +2,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Board from './Board';
 import Controls from './Controls';
+import AnalysisPlayer from './AnalysisPlayer';
 import { generatePuzzle, copyBoard, BLANK } from '../logic/sudoku';
-import { getHint } from '../logic/solver';
+import { getHint, getAnalysis } from '../logic/solver';
 import './Game.css';
 
 function Game() {
@@ -13,12 +14,20 @@ function Game() {
     const [difficulty, setDifficulty] = useState('easy');
     const [hint, setHint] = useState(null);
 
+    // Analysis State
+    const [analysisSteps, setAnalysisSteps] = useState([]);
+    const [currentAnalysisStep, setCurrentAnalysisStep] = useState(null);
+    const [isAnalyzing, setIsAnalyzing] = useState(false);
+
     const startNewGame = useCallback((diff = difficulty) => {
         const { fullBoard, puzzle } = generatePuzzle(diff);
         setBoard(puzzle);
         setInitialBoard(copyBoard(puzzle));
         setSelectedCell(null);
         setHint(null);
+        setIsAnalyzing(false);
+        setAnalysisSteps([]);
+        setCurrentAnalysisStep(null);
     }, [difficulty]);
 
     useEffect(() => {
@@ -42,9 +51,11 @@ function Game() {
         newBoard[row][col] = num;
         setBoard(newBoard);
 
-        // If the move matches the hint, clear the hint
+        // If the move matches the hint, clear the hint and analysis
         if (hint && hint.row === row && hint.col === col && hint.value === num) {
             setHint(null);
+            setIsAnalyzing(false);
+            setAnalysisSteps([]);
         }
     }, [board, selectedCell, initialBoard, hint]);
 
@@ -77,6 +88,26 @@ function Game() {
     const handleHint = () => {
         const newHint = getHint(board);
         setHint(newHint);
+        // Reset analysis when getting a new hint
+        setIsAnalyzing(false);
+        setAnalysisSteps([]);
+    };
+
+    const handleAnalyze = () => {
+        if (!hint) return;
+        const steps = getAnalysis(board, hint);
+        setAnalysisSteps(steps);
+        setIsAnalyzing(true);
+    };
+
+    const handleAnalysisStepChange = (step) => {
+        setCurrentAnalysisStep(step);
+    };
+
+    const handleCloseAnalysis = () => {
+        setIsAnalyzing(false);
+        setAnalysisSteps([]);
+        setCurrentAnalysisStep(null);
     };
 
     const handleDifficultyChange = (newDiff) => {
@@ -86,6 +117,14 @@ function Game() {
 
     if (board.length === 0) return <div className="loading">Generating Puzzle...</div>;
 
+    // Determine what highlights to show
+    let highlights = [];
+    if (isAnalyzing && currentAnalysisStep) {
+        highlights = currentAnalysisStep.highlight;
+    } else if (hint) {
+        highlights = hint.highlight;
+    }
+
     return (
         <div className="game-container">
             <div className="game-main">
@@ -94,7 +133,7 @@ function Game() {
                     initialBoard={initialBoard}
                     onCellClick={handleCellClick}
                     selectedCell={selectedCell}
-                    highlights={hint ? hint.highlight : []}
+                    highlights={highlights}
                 />
             </div>
 
@@ -105,13 +144,23 @@ function Game() {
                     onHint={handleHint}
                     onDifficultyChange={handleDifficultyChange}
                     difficulty={difficulty}
+                    onAnalyze={handleAnalyze}
+                    isHintActive={!!hint && hint.type !== 'NONE'}
                 />
 
-                {hint && (
+                {hint && !isAnalyzing && (
                     <div className="hint-box">
                         <h3>Hint</h3>
                         <p>{hint.message}</p>
                     </div>
+                )}
+
+                {isAnalyzing && (
+                    <AnalysisPlayer
+                        steps={analysisSteps}
+                        onClose={handleCloseAnalysis}
+                        onStepChange={handleAnalysisStepChange}
+                    />
                 )}
             </div>
         </div>

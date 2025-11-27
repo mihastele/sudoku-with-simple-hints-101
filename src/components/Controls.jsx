@@ -2,7 +2,7 @@
 import React from 'react';
 import './Controls.css';
 
-function Controls({ onNumberClick, onNewGame, onHint, onDifficultyChange, difficulty }) {
+function Controls({ onNumberClick, onNewGame, onHint, onDifficultyChange, difficulty, onAnalyze, isHintActive }) {
     return (
         <div className="controls">
             <div className="game-actions">
@@ -17,6 +17,7 @@ function Controls({ onNumberClick, onNewGame, onHint, onDifficultyChange, diffic
                 </select>
                 <button className="btn-primary" onClick={onNewGame}>New Game</button>
                 <button className="btn-secondary" onClick={onHint}>Hint 💡</button>
+                <button className="btn-secondary" onClick={onAnalyze} disabled={!isHintActive}>Analyze 🔍</button>
             </div>
 
             <div className="number-pad">

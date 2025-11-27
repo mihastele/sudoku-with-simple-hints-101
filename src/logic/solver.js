@@ -131,3 +131,149 @@ export function getHint(board) {
         message: "No simple hints found. Try guessing or using advanced techniques."
     };
 }
+
+export function getAnalysis(board, hint) {
+    if (!hint || hint.type === 'NONE') return [];
+
+    const steps = [];
+
+    // Case 1: Naked Single (Cell has only 1 candidate)
+    // We want to show why all OTHER numbers are impossible.
+    if (hint.type === 'NAKED_SINGLE') {
+        const { row, col, value } = hint;
+        for (let num = 1; num <= 9; num++) {
+            if (num === value) continue;
+
+            // Find why 'num' is invalid for (row, col)
+            // Check row
+            let conflict = null;
+            for (let c = 0; c < 9; c++) {
+                if (board[row][c] === num) {
+                    conflict = { type: 'row', r: row, c: c };
+                    break;
+                }
+            }
+            if (!conflict) {
+                // Check col
+                for (let r = 0; r < 9; r++) {
+                    if (board[r][col] === num) {
+                        conflict = { type: 'col', r: r, c: col };
+                        break;
+                    }
+                }
+            }
+            if (!conflict) {
+                // Check block
+                const startRow = Math.floor(row / 3) * 3;
+                const startCol = Math.floor(col / 3) * 3;
+                for (let i = 0; i < 3; i++) {
+                    for (let j = 0; j < 3; j++) {
+                        if (board[startRow + i][startCol + j] === num) {
+                            conflict = { type: 'block', r: startRow + i, c: startCol + j };
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (conflict) {
+                steps.push({
+                    message: `${num} is not possible because it's already in the ${conflict.type} at (${conflict.r + 1}, ${conflict.c + 1}).`,
+                    highlight: [{ row: conflict.r, col: conflict.c }, { row, col }], // Highlight conflict and target
+                    invalidNumber: num // Optional: to show ghost number in target cell
+                });
+            }
+        }
+        steps.push({
+            message: `Therefore, ${value} is the only possible value for this cell.`,
+            highlight: [{ row, col }],
+            isConclusion: true
+        });
+    }
+
+    // Case 2: Hidden Single (Number can only go in one spot in a unit)
+    // We want to show why the target number cannot go in ANY OTHER empty cell in that unit.
+    else if (hint.type.startsWith('HIDDEN_SINGLE')) {
+        const { row, col, value } = hint;
+
+        // Helper to find conflict for 'value' at (r, c)
+        const findConflict = (r, c) => {
+            // Check row
+            for (let x = 0; x < 9; x++) {
+                if (x !== c && board[r][x] === value) return { r, c: x, type: 'row' };
+            }
+            // Check col
+            for (let y = 0; y < 9; y++) {
+                if (y !== r && board[y][c] === value) return { r: y, c, type: 'col' };
+            }
+            // Check block
+            const sr = Math.floor(r / 3) * 3;
+            const sc = Math.floor(c / 3) * 3;
+            for (let i = 0; i < 3; i++) {
+                for (let j = 0; j < 3; j++) {
+                    const br = sr + i;
+                    const bc = sc + j;
+                    if ((br !== r || bc !== c) && board[br][bc] === value) {
+                        return { r: br, c: bc, type: 'block' };
+                    }
+                }
+            }
+            return null;
+        };
+
+        if (hint.type === 'HIDDEN_SINGLE_ROW') {
+            for (let c = 0; c < 9; c++) {
+                if (c === col || board[row][c] !== BLANK) continue;
+                const conflict = findConflict(row, c);
+                if (conflict) {
+                    steps.push({
+                        message: `${value} cannot go in (${row + 1}, ${c + 1}) because of the ${value} at (${conflict.r + 1}, ${conflict.c + 1}).`,
+                        highlight: [{ row: conflict.r, col: conflict.c }, { row, col: c }],
+                        invalidNumber: value,
+                        targetCell: { row, col: c } // The cell we are proving is invalid
+                    });
+                }
+            }
+        } else if (hint.type === 'HIDDEN_SINGLE_COL') {
+            for (let r = 0; r < 9; r++) {
+                if (r === row || board[r][col] !== BLANK) continue;
+                const conflict = findConflict(r, col);
+                if (conflict) {
+                    steps.push({
+                        message: `${value} cannot go in (${r + 1}, ${col + 1}) because of the ${value} at (${conflict.r + 1}, ${conflict.c + 1}).`,
+                        highlight: [{ row: conflict.r, col: conflict.c }, { row: r, col }],
+                        invalidNumber: value,
+                        targetCell: { row: r, col }
+                    });
+                }
+            }
+        } else if (hint.type === 'HIDDEN_SINGLE_BLOCK') {
+            const startRow = Math.floor(row / 3) * 3;
+            const startCol = Math.floor(col / 3) * 3;
+            for (let i = 0; i < 3; i++) {
+                for (let j = 0; j < 3; j++) {
+                    const r = startRow + i;
+                    const c = startCol + j;
+                    if ((r === row && c === col) || board[r][c] !== BLANK) continue;
+                    const conflict = findConflict(r, c);
+                    if (conflict) {
+                        steps.push({
+                            message: `${value} cannot go in (${r + 1}, ${c + 1}) because of the ${value} at (${conflict.r + 1}, ${conflict.c + 1}).`,
+                            highlight: [{ row: conflict.r, col: conflict.c }, { row: r, col: c }],
+                            invalidNumber: value,
+                            targetCell: { row: r, col: c }
+                        });
+                    }
+                }
+            }
+        }
+
+        steps.push({
+            message: `Therefore, ${value} must go in (${row + 1}, ${col + 1}) as it's the only spot left in this unit.`,
+            highlight: [{ row, col }],
+            isConclusion: true
+        });
+    }
+
+    return steps;
+}
