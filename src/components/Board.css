@@ -1,0 +1,102 @@
+/* src/components/Board.css */
+.sudoku-board {
+    display: flex;
+    flex-direction: column;
+    border: 2px solid var(--border-color);
+    background-color: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    box-shadow: var(--shadow-lg);
+}
+
+.board-row {
+    display: flex;
+}
+
+.board-row:nth-child(3n):not(:last-child) {
+    border-bottom: 2px solid var(--border-color);
+}
+
+.cell {
+    width: 50px;
+    height: 50px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-right: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color);
+    font-size: 1.5rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s;
+    user-select: none;
+}
+
+.cell:nth-child(3n):not(:last-child) {
+    border-right: 2px solid var(--border-color);
+}
+
+.cell:last-child {
+    border-right: none;
+}
+
+.board-row:last-child .cell {
+    border-bottom: none;
+}
+
+/* States */
+.cell:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.cell.initial {
+    font-weight: 700;
+    color: var(--text-secondary);
+    /* Or a distinct color */
+}
+
+.cell.selected {
+    background-color: rgba(56, 189, 248, 0.3);
+    /* Accent primary with opacity */
+    color: white;
+}
+
+.cell.related {
+    background-color: rgba(255, 255, 255, 0.03);
+}
+
+.cell.highlighted {
+    background-color: rgba(74, 222, 128, 0.3);
+    /* Success color for hints */
+    animation: pulse 2s infinite;
+}
+
+.cell.error {
+    background-color: rgba(248, 113, 113, 0.3);
+    /* Error color */
+    color: var(--error);
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.4);
+    }
+
+    70% {
+        box-shadow: 0 0 0 10px rgba(74, 222, 128, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(74, 222, 128, 0);
+    }
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    .cell {
+        width: 35px;
+        height: 35px;
+        font-size: 1rem;
+    }
+}

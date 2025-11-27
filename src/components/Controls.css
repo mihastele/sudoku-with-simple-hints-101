@@ -1,0 +1,78 @@
+/* src/components/Controls.css */
+.controls {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    width: 100%;
+    max-width: 400px;
+}
+
+.game-actions {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.difficulty-select {
+    padding: 0.5rem 1rem;
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    outline: none;
+    cursor: pointer;
+}
+
+.btn-primary,
+.btn-secondary {
+    padding: 0.5rem 1.5rem;
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    transition: transform 0.1s, opacity 0.2s;
+}
+
+.btn-primary {
+    background-color: var(--accent-primary);
+    color: var(--bg-primary);
+}
+
+.btn-secondary {
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+
+.btn-primary:active,
+.btn-secondary:active {
+    transform: scale(0.95);
+}
+
+.number-pad {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0.5rem;
+}
+
+.num-btn {
+    aspect-ratio: 1;
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    font-size: 1.25rem;
+    font-weight: 600;
+    transition: background-color 0.2s;
+}
+
+.num-btn:hover {
+    background-color: var(--border-color);
+}
+
+.num-btn:active {
+    background-color: var(--accent-secondary);
+    color: white;
+}
+
+.clear-btn {
+    color: var(--error);
+}
