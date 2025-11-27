@@ -28,6 +28,13 @@
     max-width: 400px;
 }
 
+@media (max-width: 640px) {
+    .game-sidebar {
+        max-width: 100%;
+        gap: 1rem;
+    }
+}
+
 .hint-box {
     background-color: rgba(56, 189, 248, 0.1);
     border: 1px solid var(--accent-primary);
@@ -35,6 +42,12 @@
     padding: 1rem;
     color: var(--text-primary);
     animation: fadeIn 0.3s ease-in-out;
+}
+
+@media (max-width: 640px) {
+    .hint-box {
+        padding: 0.75rem;
+    }
 }
 
 .hint-box h3 {

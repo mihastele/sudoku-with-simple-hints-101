@@ -7,10 +7,24 @@
     max-width: 400px;
 }
 
+@media (max-width: 640px) {
+    .controls {
+        max-width: 100%;
+        gap: 1rem;
+    }
+}
+
 .game-actions {
     display: flex;
     justify-content: space-between;
     gap: 1rem;
+}
+
+@media (max-width: 640px) {
+    .game-actions {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
 }
 
 .difficulty-select {
@@ -23,12 +37,27 @@
     cursor: pointer;
 }
 
+@media (max-width: 640px) {
+    .difficulty-select {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.9rem;
+    }
+}
+
 .btn-primary,
 .btn-secondary {
     padding: 0.5rem 1.5rem;
     border-radius: var(--radius-sm);
     font-weight: 600;
     transition: transform 0.1s, opacity 0.2s;
+}
+
+@media (max-width: 640px) {
+    .btn-primary,
+    .btn-secondary {
+        padding: 0.4rem 1rem;
+        font-size: 0.9rem;
+    }
 }
 
 .btn-primary {
@@ -53,6 +82,12 @@
     gap: 0.5rem;
 }
 
+@media (max-width: 640px) {
+    .number-pad {
+        gap: 0.3rem;
+    }
+}
+
 .num-btn {
     aspect-ratio: 1;
     background-color: var(--bg-secondary);
@@ -62,6 +97,12 @@
     font-size: 1.25rem;
     font-weight: 600;
     transition: background-color 0.2s;
+}
+
+@media (max-width: 640px) {
+    .num-btn {
+        font-size: 1rem;
+    }
 }
 
 .num-btn:hover {
