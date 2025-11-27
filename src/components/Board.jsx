@@ -12,8 +12,10 @@ function Board({ board, initialBoard, onCellClick, selectedCell, highlights = []
                         const isSelected = selectedCell && selectedCell.row === r && selectedCell.col === c;
                         const isInitial = initialBoard[r][c] !== 0;
 
-                        // Check if this cell is in the highlights array
-                        const isHighlighted = highlights.some(h => h.row === r && h.col === c);
+                        // Find if this cell is highlighted and what type
+                        const highlight = highlights.find(h => h.row === r && h.col === c);
+                        // If highlight object has type, use it. If it's just {row, col} (old hint), default to 'target' or generic
+                        const highlightType = highlight ? (highlight.type || 'target') : null;
 
                         // Optional: Check if related to selected cell (same row/col/block)
                         let isRelated = false;
@@ -32,7 +34,7 @@ function Board({ board, initialBoard, onCellClick, selectedCell, highlights = []
                                 onClick={() => onCellClick(r, c)}
                                 isSelected={isSelected}
                                 isInitial={isInitial}
-                                isHighlighted={isHighlighted}
+                                highlightType={highlightType}
                                 isRelated={isRelated}
                             />
                         );

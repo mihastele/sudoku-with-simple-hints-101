@@ -177,16 +177,39 @@ export function getAnalysis(board, hint) {
             }
 
             if (conflict) {
+                const highlights = [];
+
+                // 1. Target Cell
+                highlights.push({ row, col, type: 'target' });
+
+                // 2. Conflict Source
+                highlights.push({ row: conflict.r, col: conflict.c, type: 'source' });
+
+                // 3. Conflict Line/Block
+                if (conflict.type === 'row') {
+                    for (let c = 0; c < 9; c++) highlights.push({ row: conflict.r, col: c, type: 'line' });
+                } else if (conflict.type === 'col') {
+                    for (let r = 0; r < 9; r++) highlights.push({ row: r, col: conflict.c, type: 'line' });
+                } else if (conflict.type === 'block') {
+                    const sr = Math.floor(conflict.r / 3) * 3;
+                    const sc = Math.floor(conflict.c / 3) * 3;
+                    for (let i = 0; i < 3; i++) {
+                        for (let j = 0; j < 3; j++) {
+                            highlights.push({ row: sr + i, col: sc + j, type: 'line' });
+                        }
+                    }
+                }
+
                 steps.push({
                     message: `${num} is not possible because it's already in the ${conflict.type} at (${conflict.r + 1}, ${conflict.c + 1}).`,
-                    highlight: [{ row: conflict.r, col: conflict.c }, { row, col }], // Highlight conflict and target
-                    invalidNumber: num // Optional: to show ghost number in target cell
+                    highlight: highlights,
+                    invalidNumber: num
                 });
             }
         }
         steps.push({
             message: `Therefore, ${value} is the only possible value for this cell.`,
-            highlight: [{ row, col }],
+            highlight: [{ row, col, type: 'target' }],
             isConclusion: true
         });
     }
@@ -221,31 +244,48 @@ export function getAnalysis(board, hint) {
             return null;
         };
 
+        const addStep = (r, c, conflict) => {
+            const highlights = [];
+            // Target we are disproving
+            highlights.push({ row: r, col: c, type: 'target' });
+
+            // Conflict Source
+            highlights.push({ row: conflict.r, col: conflict.c, type: 'source' });
+
+            // Conflict Line
+            if (conflict.type === 'row') {
+                for (let k = 0; k < 9; k++) highlights.push({ row: conflict.r, col: k, type: 'line' });
+            } else if (conflict.type === 'col') {
+                for (let k = 0; k < 9; k++) highlights.push({ row: k, col: conflict.c, type: 'line' });
+            } else if (conflict.type === 'block') {
+                const sr = Math.floor(conflict.r / 3) * 3;
+                const sc = Math.floor(conflict.c / 3) * 3;
+                for (let i = 0; i < 3; i++) {
+                    for (let j = 0; j < 3; j++) {
+                        highlights.push({ row: sr + i, col: sc + j, type: 'line' });
+                    }
+                }
+            }
+
+            steps.push({
+                message: `${value} cannot go in (${r + 1}, ${c + 1}) because of the ${value} at (${conflict.r + 1}, ${conflict.c + 1}).`,
+                highlight: highlights,
+                invalidNumber: value,
+                targetCell: { row: r, col: c }
+            });
+        };
+
         if (hint.type === 'HIDDEN_SINGLE_ROW') {
             for (let c = 0; c < 9; c++) {
                 if (c === col || board[row][c] !== BLANK) continue;
                 const conflict = findConflict(row, c);
-                if (conflict) {
-                    steps.push({
-                        message: `${value} cannot go in (${row + 1}, ${c + 1}) because of the ${value} at (${conflict.r + 1}, ${conflict.c + 1}).`,
-                        highlight: [{ row: conflict.r, col: conflict.c }, { row, col: c }],
-                        invalidNumber: value,
-                        targetCell: { row, col: c } // The cell we are proving is invalid
-                    });
-                }
+                if (conflict) addStep(row, c, conflict);
             }
         } else if (hint.type === 'HIDDEN_SINGLE_COL') {
             for (let r = 0; r < 9; r++) {
                 if (r === row || board[r][col] !== BLANK) continue;
                 const conflict = findConflict(r, col);
-                if (conflict) {
-                    steps.push({
-                        message: `${value} cannot go in (${r + 1}, ${col + 1}) because of the ${value} at (${conflict.r + 1}, ${conflict.c + 1}).`,
-                        highlight: [{ row: conflict.r, col: conflict.c }, { row: r, col }],
-                        invalidNumber: value,
-                        targetCell: { row: r, col }
-                    });
-                }
+                if (conflict) addStep(r, col, conflict);
             }
         } else if (hint.type === 'HIDDEN_SINGLE_BLOCK') {
             const startRow = Math.floor(row / 3) * 3;
@@ -256,21 +296,14 @@ export function getAnalysis(board, hint) {
                     const c = startCol + j;
                     if ((r === row && c === col) || board[r][c] !== BLANK) continue;
                     const conflict = findConflict(r, c);
-                    if (conflict) {
-                        steps.push({
-                            message: `${value} cannot go in (${r + 1}, ${c + 1}) because of the ${value} at (${conflict.r + 1}, ${conflict.c + 1}).`,
-                            highlight: [{ row: conflict.r, col: conflict.c }, { row: r, col: c }],
-                            invalidNumber: value,
-                            targetCell: { row: r, col: c }
-                        });
-                    }
+                    if (conflict) addStep(r, c, conflict);
                 }
             }
         }
 
         steps.push({
             message: `Therefore, ${value} must go in (${row + 1}, ${col + 1}) as it's the only spot left in this unit.`,
-            highlight: [{ row, col }],
+            highlight: [{ row, col, type: 'target' }],
             isConclusion: true
         });
     }

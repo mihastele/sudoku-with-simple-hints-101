@@ -5,15 +5,15 @@ function Cell({
     value,
     onClick,
     isSelected,
-    isHighlighted,
+    highlightType, // 'source', 'line', 'target', or undefined
     isInitial,
     isError,
-    isRelated // For row/col/block highlighting (optional polish)
+    isRelated
 }) {
     const classes = [
         'cell',
         isSelected ? 'selected' : '',
-        isHighlighted ? 'highlighted' : '',
+        highlightType ? `highlight-${highlightType}` : '',
         isInitial ? 'initial' : '',
         isError ? 'error' : '',
         isRelated ? 'related' : '',
